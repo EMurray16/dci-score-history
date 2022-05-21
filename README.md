@@ -2,7 +2,7 @@
 
 DCI scores from 2000 onwards
 
-This repository contains compiled DCI scores, going back to 2000. Why 2000? It's the first season in which DCI had the 40-30-30 format of scoring with subcaptions that closely resemble those used today. That said, this repository may include more years in the future.
+This repository contains compiled DCI scores, going back to 2000. Why 2000? It's the first season in which DCI had the 40-30-30 format of scoring with subcaptions that closely resemble those used today. That said, past years farther back than 2000 may be added to this repository over time.
 
 This data comes from 2 sources. Each has their own file format:
 
@@ -12,7 +12,7 @@ This data comes from 2 sources. Each has their own file format:
 
 The `combined` folder contains a merged score file with detail from both datasets. 
 
-The code used to scrape the data from each source is not yet publicly available, but may be in the future. 
+The code used to scrape the data from each source is not yet publicly available, because it's a pile of python, Javascritpt, R, and Go code, depending on running Google Chrome in a headless state. Code may be made publicly available in the relevant folders in the future.
 
 # Support
 
