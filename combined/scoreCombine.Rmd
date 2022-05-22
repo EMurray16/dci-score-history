@@ -1,0 +1,101 @@
+---
+title: "Score Combiner"
+output: html_document
+---
+
+This document combines the DCI and fromthepressbox scores into a single, harmonized file format. Why an Rmd file instead of an R file? 2 reasons:
+
+1. In recent versions of Rstudio, Rmarkdown code runs from the location of the file itself, rather than R's default working directory. This is consistent with the bahaviour when knitting an Rmd file using base R as well. This allows us to safely use relative paths without making explicit `setwd` calls, making the code more portable.
+
+2. Rmarkdown files are very good for including more detailed discussion and documentation of the code, which is a best practice, but also particularly good for anyone trying to learn R.
+
+This script uses the [`data.table` package](https://github.com/Rdatatable/data.table) instead of the famous `tidyverse`. At the end of the day this boils down to personal preference, but `data.table` is more performant and, in my experience, just as easy for beginners to learn. 
+
+
+```{r load libraries, include=FALSE, message=FALSE, warning=FALSE}
+library(data.table)
+```
+
+To start, we will look at the DCI data. After reading the data, we will do a few cleaning steps:
+
+1. In this file, a value of -1 indicates missing data. We want change these to NA because it's more clear, and it's consistent with the fromthepressbox data.
+
+2. Then we want to drop columns we don't need. To start, this includes any columns that exist for a second judge where DCI hasn't had one yet, which is all the visual captions. If DCI were to add a second judge to, say, the color guard caption, this script would need to be updated!
+
+3. We can also remove columns which would be helpful, but don't exist in the fromthepressbox data. By removing them, we avoid confusion but drop some data. It's a trade-off.
+
+```{r load DCI data and prepare}
+dciData = fread("../dci.org/dciScoreArchive_20142019.csv")
+
+# set all values of -1 in the data to NA, to be consistent with fromthepressbox
+dciData[dciData == -1] = NA
+
+# get rid of columns we don't need
+dciData[,ColorGuard2 := NULL]
+dciData[,VisualAnalysis2 := NULL]
+dciData[,VisualProficiency2 := NULL]
+
+# get rid of columns that don't exist in fromthepressbox
+dciData[,Penalty := NULL]
+dciData[,Total := NULL]
+```
+
+Next, we read the fromthepressbox data. Because this dataset is more limited, there's less cleaning we need to do. We do, however, want to change the data to a better format.
+
+We may come across dates that are not formatted properly, in which case the scores are just not helpful. They should be removed. We check for this in two ways. First, we find the unparsable dates (which have the value NA after conversion), and second, we look for any dates before 2000.
+
+```{r load fromthepressbox and prepare}
+ftpData = fread("../fromthepressbox.com/allScores.csv")
+
+ftpData[,date := as.Date(date, format="%m/%d/%Y")]
+
+ftpData = ftpData[!is.na(date) & date >= "2000-06-01",]
+ftpData[,date := format(date, format="%Y%m%d")]
+```
+
+We're almost ready to combine the tables and write a new file. But we need to harmonize the column names, and make sure that every column exists in both tables.
+
+```{r harmonize column names}
+# rename the fromthepressbox column names
+# If the file formats changed, this code would need revisiting
+setnames(ftpData, old=c("VisualColorGuard","VisualProficiency","VisualAnalysis","MusicAnalysis","MusicBrass"),
+									new=c("ColorGuard1","VisualProficiency1","VisualAnalysis1","MusicAnalysis1","MusicBrass1")
+)
+
+# This code should NOT need to change if file formats change
+# create name vectors for each source's columns
+dciNames = names(dciData)
+ftpNames = names(ftpData)
+combinedNames = unique(c(dciNames, ftpNames))
+
+# Figure out which columns need to be added to which source
+newFTPNames = combinedNames[!(combinedNames %in% ftpNames)]
+newDCINames = combinedNames[!(combinedNames %in% dciNames)]
+	
+# Add those columns all at once
+	# see: https://stackoverflow.com/a/70127689
+ftpData[, (newFTPNames) := list(NA)]
+dciData[, (newDCINames) := list(NA)]
+```
+
+Now that we've harmonized the columns, all we need to do is combine the tables and write the new data.
+
+```{r combine and write file}
+outputData = rbindlist(list(ftpData, dciData), use.names=TRUE)
+
+# set the row order to something more intuitive
+setorder(outputData, date, showID, corps, Subtotal, GETotal, MusicTotal, VisualTotal)
+
+# set the column order in the output to be more intuitive
+outputData = outputData[,.(# basic stuff first, captions alphabetical
+													 date, showID, corps, Subtotal, GETotal, MusicTotal, VisualTotal, 
+													 # GE caption, alphabetical
+													 GE1A, GE1B, GE2A, GE2B, GEMusic1, GEMusic2, GEVisual1, GEVisual2,
+													 # Music caption, alphabetical
+													 MusicAnalysis1, MusicAnalysis2, MusicBrass1, MusicEnsemble, MusicPercussion1, MusicPercussion2,
+													 # Visual caption, alphabetical
+													 ColorGuard1, VisualAnalysis1, VisualEnsemble, VisualPerformance, VisualProficiency1
+												)]
+
+fwrite(outputData, file="./allScores_2000to2019.csv")
+```
