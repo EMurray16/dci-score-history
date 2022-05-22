@@ -14,6 +14,16 @@ The `combined` folder contains a merged score file with detail from both dataset
 
 The code used to scrape the data from each source is not yet publicly available, because it's a pile of python, Javascritpt, R, and Go code, depending on running Google Chrome in a headless state. Code may be made publicly available in the relevant folders in the future.
 
+## Download the data
+
+There are three ways to download the data. 
+
+1. If you are a Github user, you can clone the repository. 
+
+2. If you are not a Github user, you can download this by clicking on the green "Code" button near the top of the page, and select "Download ZIP".
+
+3. The full combined dataset can be accessed in code without directly downloading or cloning the repository by sending an HTTP GET request to the following URL: [https://raw.githubusercontent.com/EMurray16/dci-score-history/main/combined/allScores_2000to2019.csv](https://raw.githubusercontent.com/EMurray16/dci-score-history/main/combined/allScores_2000to2019.csv)
+
 # Support
 
 This data is freely and publicly available under an MIT License. It will always be this way. But, if you use this data and want to support my work, please consider donating to the [Michigan Drum Corps Scholarship Fund](https://midrumcorpsfund.org). I am a cofounder and current CEO, and your support would mean a lot to me! 100% of your donation would go towards keeping drum corps affordable for Michigan students.
